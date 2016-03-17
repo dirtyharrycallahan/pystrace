@@ -307,18 +307,27 @@ class StraceInputStream:
 		if line.endswith("---"):
 			r = re_extract_signal.match(line, pos_start)
 			if r is not None:
-				return self.next()
+                                timestamp = float(r.group(1))
+                                signal_name = r.group(2)
+                                arguments = self.__parse_arguments(r.group(3))
+		                return StraceEntry(pid, timestamp, False, 0,
+						   signal_name, arguments, 0)
 		
 		# Exit/Kill
 		
 		if line.endswith("+++"):
 			r = re_extract_exit.match(line, pos_start)
 			if r is not None:
-				return self.next()
+                                timestamp = float(r.group(1))
+                                return_value = r.group(2)
+		                return StraceEntry(pid, timestamp, False, 0,
+						   "EXIT", [], return_value)
 
 			r = re_extract_kill.match(line, pos_start)
 			if r is not None:
-				return self.next()
+                                timestamp = float(r.group(1))
+		                return StraceEntry(pid, timestamp, False, 0,
+						   "KILL", [r.group(2)], 0)
 		
 		
 		# Unfinished and resumed syscalls
