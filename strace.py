@@ -70,6 +70,14 @@ global re_extract_signal
 re_extract_signal \
 		= re.compile(r"\s*(\d+\.\d+) --- (\w+) \{(.)*\} ---$")
 
+global re_extract_exit
+re_extract_exit \
+		= re.compile(r"\s*(\d+\.\d+) \+\+\+ exited with (-?[\d]+) \+\+\+$")
+
+global re_extract_kill
+re_extract_kill \
+		= re.compile(r"\s*(\d+\.\d+) \+\+\+ killed by ([\w]+) \+\+\+$")
+
 global re_extract_arguments_and_return_value_none
 re_extract_arguments_and_return_value_none \
 		= re.compile(r"\((.*)\)[ \t]*= (\?)$")
@@ -298,6 +306,17 @@ class StraceInputStream:
 		
 		if line.endswith("---"):
 			r = re_extract_signal.match(line, pos_start)
+			if r is not None:
+				return self.next()
+		
+		# Exit/Kill
+		
+		if line.endswith("+++"):
+			r = re_extract_exit.match(line, pos_start)
+			if r is not None:
+				return self.next()
+
+			r = re_extract_kill.match(line, pos_start)
 			if r is not None:
 				return self.next()
 		
