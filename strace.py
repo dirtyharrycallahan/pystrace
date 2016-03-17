@@ -68,7 +68,7 @@ re_extract_resumed \
 
 global re_extract_signal
 re_extract_signal \
-		= re.compile(r"\s*(\d+\.\d+) --- (\w+) \(([\w ]+)\) @ (\d)+ \((\d+)\) ---$")
+		= re.compile(r"\s*(\d+\.\d+) --- (\w+) \{(.)*\} ---$")
 
 global re_extract_arguments_and_return_value_none
 re_extract_arguments_and_return_value_none \
