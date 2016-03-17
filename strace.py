@@ -229,7 +229,8 @@ class StraceInputStream:
 					else:
 						nest_stack.pop()
 						quote_type = None
-						expect_comma = True
+                                                if not current_arg == '[?]':
+						        expect_comma = True
 				elif c in [']', '}']:
 					current_arg += c
 				else:
