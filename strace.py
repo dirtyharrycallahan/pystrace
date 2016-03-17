@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2
 
 #
 # pystrace -- Python tools for parsing and analysing strace output files
@@ -40,6 +40,8 @@ import re
 import sys
 
 import strace_utils
+
+from decimal import *
 
 
 #
@@ -210,8 +212,8 @@ class StraceInputStream:
 				elif c in [' ', '\t']:
 					continue
 				else:
-					print "C:" + current_arg
-					print arguments
+					print("C:" + current_arg)
+					print(arguments)
 					raise Exception(("'%s' found where comma expected; " \
 							+ "offending string: %s") % (c, arguments_str))
 				continue
@@ -237,7 +239,7 @@ class StraceInputStream:
 					else:
 						nest_stack.pop()
 						quote_type = None
-                                                if not current_arg == '[?]':
+						if not current_arg == '[?]':
 						        expect_comma = True
 				elif c in [']', '}']:
 					current_arg += c
@@ -307,27 +309,24 @@ class StraceInputStream:
 		if line.endswith("---"):
 			r = re_extract_signal.match(line, pos_start)
 			if r is not None:
-                                timestamp = float(r.group(1))
-                                signal_name = r.group(2)
-                                arguments = self.__parse_arguments(r.group(3))
-		                return StraceEntry(pid, timestamp, False, 0,
-						   signal_name, arguments, 0)
+				timestamp = Decimal(r.group(1))
+				signal_name = r.group(2)
+				arguments = self.__parse_arguments(r.group(3))
+				return StraceEntry(pid, timestamp, False, 0, signal_name, arguments, 0)
 		
 		# Exit/Kill
 		
 		if line.endswith("+++"):
 			r = re_extract_exit.match(line, pos_start)
 			if r is not None:
-                                timestamp = float(r.group(1))
-                                return_value = r.group(2)
-		                return StraceEntry(pid, timestamp, False, 0,
-						   "EXIT", [], return_value)
+				timestamp = Decimal(r.group(1))
+				return_value = r.group(2)
+				return StraceEntry(pid, timestamp, False, 0, "EXIT", [], return_value)
 
 			r = re_extract_kill.match(line, pos_start)
 			if r is not None:
-                                timestamp = float(r.group(1))
-		                return StraceEntry(pid, timestamp, False, 0,
-						   "KILL", [r.group(2)], 0)
+				timestamp = Decimal(r.group(1))
+				return StraceEntry(pid, timestamp, False, 0, "KILL", [r.group(2)], 0)
 		
 		
 		# Unfinished and resumed syscalls
@@ -357,12 +356,12 @@ class StraceInputStream:
 		
 		r = re_extract.match(line, pos_start)
 		if r is not None:
-			timestamp = float(r.group(1))
+			timestamp = Decimal(r.group(1))
 			syscall_name = r.group(2)
 			args_and_result_str = r.group(3)
 			elapsed_time = r.group(4)
 			if elapsed_time[0].isdigit():
-				elapsed_time = float(elapsed_time)
+				elapsed_time = Decimal(elapsed_time)
 			elif elapsed_time == "unavailable":
 				elapsed_time = None
 			else:
@@ -370,7 +369,7 @@ class StraceInputStream:
 		else:
 			r = re_extract_no_elapsed.match(line, pos_start)
 			if r is not None:
-				timestamp = float(r.group(1))
+				timestamp = Decimal(r.group(1))
 				syscall_name = r.group(2)
 				args_and_result_str = r.group(3)
 				elapsed_time = None
