@@ -1,4 +1,4 @@
-#!/usr/bin/python2
+#!/usr/bin/python
 
 #
 # pystrace -- Python tools for parsing and analysing strace output files

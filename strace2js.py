@@ -103,6 +103,9 @@ killed_node_template = \
 
 edge_template = "{{from: {f}, to: {t} }},"
 
+label_node_template = \
+        "{{id: {pid}, label: '{label}', x: {xx}, y: {yy}, size: 25, shape: 'text' }},"
+
 
 #
 # Convert to a .js
@@ -140,6 +143,8 @@ def convert2js(input_file, output_file=None, skip_nonproc=False):
 
 	x     = 0
 	max_y = 0
+
+	pid_to_first_x = {}
 	
 	for entry in strace_stream:
 		
@@ -179,14 +184,17 @@ def convert2js(input_file, output_file=None, skip_nonproc=False):
 			entry_template = killed_node_template
 		else:
 			entry_template = default_node_template
-			if skip_nonproc:
-				continue
 
 		# Get/update the predecessor timestamp
 		if pid in pid_to_node:
 			pred = pid_to_node[pid]
 		else:
 			pred = None
+
+		if pid not in pid_to_first_x:
+			pid_to_first_x[pid] = x
+		elif entry_template == default_node_template and skip_nonproc:
+			continue
 
 		pid_to_node[pid] = entry.timestamp
 
@@ -218,6 +226,16 @@ def convert2js(input_file, output_file=None, skip_nonproc=False):
 					)
 			
 			edges = edges + edge
+
+	for pid,x in pid_to_first_x.iteritems():
+		label = label_node_template.format(
+				pid=pid,
+				label=pid,
+				xx=(x - 50),
+				yy=pid_to_y[pid],
+				)
+
+		nodes = nodes + label
 
 	f_out.write(document_template.format(
 			nodes=nodes,
@@ -261,7 +279,7 @@ def main(argv):
 		options, remainder = getopt.gnu_getopt(argv, 'hco:',
 			['help', 'compress', 'output='])
 
-		skip = False
+		skip  = False
 		
 		for opt, arg in options:
 			if opt in ('-h', '--help'):
