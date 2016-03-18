@@ -110,7 +110,7 @@ label_node_template = \
 #
 # Convert to a .js
 #
-def convert2js(input_file, output_file=None, skip_nonproc=False):
+def convert2js(input_file, output_file=None, skip_nonproc=False, varan=False):
 	'''
 	Convert to a .html with vis.js
 	
@@ -145,6 +145,12 @@ def convert2js(input_file, output_file=None, skip_nonproc=False):
 	max_y = 0
 
 	pid_to_first_x = {}
+
+	# Varan variables
+	monitors  = set()
+	zygote    = None
+	leaders   = set()
+	followers = set()
 	
 	for entry in strace_stream:
 		
@@ -173,8 +179,27 @@ def convert2js(input_file, output_file=None, skip_nonproc=False):
 				edges = edges + edge
 			else:
 				pid_to_node[entry.return_value] = entry.timestamp
+
+			if varan:
+				if pid in monitors:
+					if len(monitors) == 1 and zygote is None:
+						zygote = entry.return_value
+					else:
+						monitors.add(entry.return_value)
+				elif pid == zygote:
+					if len(leaders) == 0:
+						leaders.add(entry.return_value)
+					else:
+						followers.add(entry.return_value)
+				elif pid in leaders:
+					leaders.add(entry.return_value)
+				elif pid in followers:
+					followers.add(entry.return_value)
+
 		elif entry.syscall_name == 'execve':
 			entry_template = execve_node_template
+			if varan and pid not in monitors and entry.syscall_arguments[0].endswith('vx"'):
+				monitors.add(pid)
 		elif entry.syscall_name == 'EXIT':
 			if entry.return_value == '0':
 				entry_template = exited_ok_node_template
@@ -228,9 +253,24 @@ def convert2js(input_file, output_file=None, skip_nonproc=False):
 			edges = edges + edge
 
 	for pid,x in pid_to_first_x.iteritems():
+		if varan:
+			if pid in monitors:
+				name = 'monitor'
+			elif pid in leaders:
+				name = 'leader'
+			elif pid in followers:
+				name = 'follower'
+			elif pid == zygote:
+				name = 'zygote'
+			else:
+				name = pid
+				#raise Exception("Process {} with unkown role".format(pid))
+		else:
+			name = pid
+
 		label = label_node_template.format(
 				pid=pid,
-				label=pid,
+				label=name,
 				xx=(x - 50),
 				yy=pid_to_y[pid],
 				)
@@ -276,10 +316,11 @@ def main(argv):
 	# Parse the command-line options
 
 	try:
-		options, remainder = getopt.gnu_getopt(argv, 'hco:',
-			['help', 'compress', 'output='])
+		options, remainder = getopt.gnu_getopt(argv, 'hcvo:',
+			['help', 'compress', 'varan', 'output='])
 
 		skip  = False
+		varan = False
 		
 		for opt, arg in options:
 			if opt in ('-h', '--help'):
@@ -289,6 +330,8 @@ def main(argv):
 				output_file = arg
 			elif opt in ('-c', '--compress'):
 				skip = True
+			elif opt in ('-v', '--varan'):
+				varan = True
 		
 		if len(remainder) > 1:
 			raise Exception("Too many options")
@@ -302,7 +345,7 @@ def main(argv):
 	# Convert to .html
 
 	try:
-		convert2js(input_file, output_file, skip)
+		convert2js(input_file, output_file, skip, varan)
 	except IOError as e:
 		sys.stderr.write("%s: %s\n" % (os.path.basename(sys.argv[0]), e))
 		sys.exit(1)
