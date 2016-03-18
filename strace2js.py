@@ -100,6 +100,8 @@ exited_ko_node_template = \
 		"{{ id: {ts}, label: 'EXITED', title: '{arguments}', x: {xx}, y: {yy}, size: 25, color: 'red', shape: 'box' }},"
 killed_node_template = \
         "{{ id: {ts}, label: '{arguments}', x: {xx}, y: {yy}, size: 25, color: 'red', shape: 'box' }},"
+assert_node_template = \
+        "{{ id: {ts}, label: '{syscall}', title: '{arguments}', x: {xx}, y: {yy}, size: 25, color: 'red', shape: 'triangle' }},"
 
 edge_template = "{{from: {f}, to: {t} }},"
 
@@ -207,6 +209,8 @@ def convert2js(input_file, output_file=None, skip_nonproc=False, varan=False):
 				entry_template = exited_ko_node_template
 		elif entry.syscall_name == 'KILL':
 			entry_template = killed_node_template
+		elif varan and entry.syscall_name == 'writev':
+			entry_template = assert_node_template
 		else:
 			entry_template = default_node_template
 
